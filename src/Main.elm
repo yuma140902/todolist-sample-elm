@@ -166,38 +166,44 @@ filterSelector currentFilter =
         ]
 
 
+taskToString : Task -> String
+taskToString task =
+    task.text
+        ++ (if task.completed then
+                " (完了)"
+
+            else
+                " (未完了)"
+           )
+
+
 taskList : Filter -> Array Task -> Html Msg
 taskList filter tasks =
     let
+        predicate : Task -> Bool
+        predicate task =
+            case filter of
+                All ->
+                    True
+
+                Todo ->
+                    not task.completed
+
+                Completed ->
+                    task.completed
+
+        makeElement : Int -> Task -> Html Msg
+        makeElement index task =
+            li []
+                [ button [ onClick <| CompleteTask index ] [ text "完了" ]
+                , button [ onClick <| RemoveTask index ] [ text "削除" ]
+                , text <| taskToString task
+                ]
+
         taskElements =
             tasks
-                |> Array.filter
-                    (\task ->
-                        case filter of
-                            All ->
-                                True
-
-                            Todo ->
-                                not task.completed
-
-                            Completed ->
-                                task.completed
-                    )
-                |> Array.indexedMap
-                    (\index task ->
-                        li []
-                            [ button [ onClick <| CompleteTask index ] [ text "完了" ]
-                            , button [ onClick <| RemoveTask index ] [ text "削除" ]
-                            , text <|
-                                task.text
-                                    ++ (if task.completed then
-                                            " (完了)"
-
-                                        else
-                                            " (未完了)"
-                                       )
-                            ]
-                    )
+                |> Array.filter predicate
+                |> Array.indexedMap makeElement
                 |> Array.toList
     in
     ul [] taskElements
